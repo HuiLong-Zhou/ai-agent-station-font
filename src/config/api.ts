@@ -109,6 +109,7 @@ export const API_ENDPOINTS = {
   ADMIN_USER: {
     BASE: `${API_CONFIG.BASE_DOMAIN}/api/${API_CONFIG.API_VERSION}/admin/admin-user`,
     VALIDATE_LOGIN: '/validate-login',
+    CREATE: '/create',               // 新增注册接口
   },
   
   // 可以在这里添加其他模块的 API 端点

@@ -53,4 +53,35 @@ export class AdminUserService {
       return false;
     }
   }
+
+  /**
+   * 注册新管理员用户
+   * @param registerData 注册数据
+   * @returns Promise<boolean> 注册是否成功
+   */
+  static async registerAdminUser(registerData: { username: string; password: string }): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.BASE_URL}${API_ENDPOINTS.ADMIN_USER.CREATE}`, {
+        method: 'POST',
+        headers: DEFAULT_HEADERS,
+        body: JSON.stringify(registerData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result: ApiResponse<boolean> = await response.json();
+
+      if (result.code === '0000') {
+        return result.data === true;
+      } else {
+        console.error('注册失败:', result.info);
+        return false;
+      }
+    } catch (error) {
+      console.error('注册请求失败:', error);
+      return false;
+    }
+  }
 }

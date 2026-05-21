@@ -178,46 +178,104 @@ const Divider = styled.div`
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async (values: Record<string, any>) => {
+  const handleSubmit = async (values: Record<string, any>) => {
+
     setLoading(true);
+
     try {
+
       if (!values.username || !values.password) {
         Toast.error('请输入账号和密码');
         return;
       }
 
-      // 调用后端登录校验接口
-      const isLoginSuccess = await AdminUserService.validateAdminUserLogin({
-        username: values.username,
-        password: values.password
-      });
-      
-      if (isLoginSuccess) {
-        const userInfo = {
+      // 注册模式
+      if (isRegisterMode) {
+
+        const registerSuccess = await AdminUserService.registerAdminUser({
           username: values.username,
-          loginTime: new Date().toISOString(),
-          token: 'token-' + Date.now()
-        };
-        localStorage.setItem('token', userInfo.token);
-        localStorage.setItem('userInfo', JSON.stringify(userInfo));
-        localStorage.setItem('isLoggedIn', 'true');
-        Toast.success('登录成功！');
-        navigate('/dashboard');
+          password: values.password,
+        });
+
+        if (registerSuccess) {
+
+          Toast.success('注册成功，正在自动登录...');
+
+          // 自动登录
+          const loginSuccess =
+            await AdminUserService.validateAdminUserLogin({
+              username: values.username,
+              password: values.password,
+            });
+
+          if (loginSuccess) {
+
+            const userInfo = {
+              username: values.username,
+              loginTime: new Date().toISOString(),
+              token: 'token-' + Date.now()
+            };
+
+            localStorage.setItem('token', userInfo.token);
+            localStorage.setItem('userInfo', JSON.stringify(userInfo));
+            localStorage.setItem('isLoggedIn', 'true');
+
+            navigate('/dashboard');
+          }
+
+        } else {
+
+          Toast.error('注册失败，用户名可能已存在');
+        }
+
       } else {
-        Toast.error('账号或密码错误，请重试');
+
+        // 登录模式
+        const isLoginSuccess =
+          await AdminUserService.validateAdminUserLogin({
+            username: values.username,
+            password: values.password
+          });
+
+        if (isLoginSuccess) {
+
+          const userInfo = {
+            username: values.username,
+            loginTime: new Date().toISOString(),
+            token: 'token-' + Date.now()
+          };
+
+          localStorage.setItem('token', userInfo.token);
+          localStorage.setItem('userInfo', JSON.stringify(userInfo));
+          localStorage.setItem('isLoggedIn', 'true');
+
+          Toast.success('登录成功！');
+
+          navigate('/dashboard');
+
+        } else {
+
+          Toast.error('账号不存在或密码错误');
+        }
       }
+
     } catch (error) {
-      console.error('登录失败:', error);
-      Toast.error('登录失败，请检查网络连接或稍后重试');
+
+      console.error('请求失败:', error);
+
+      Toast.error('请求失败，请稍后重试');
+
     } finally {
+
       setLoading(false);
     }
   };
 
   const handleTestLogin = () => {
-    handleLogin({ username: 'admin', password: '123456' });
+    // handleLogin({ username: 'admin', password: '123456' });
   };
 
   return (
@@ -236,18 +294,20 @@ const LoginPage: React.FC = () => {
             简单易用，功能强大，助力您的业务智能化升级。
           </BrandDescription>
         </BrandSection>
-        
+
         <LoginCard>
           <LoginHeader>
             <LoginTitle heading={3}>
-              欢迎登录
+              {isRegisterMode ? '用户注册' : '欢迎登录'}
             </LoginTitle>
             <LoginSubtitle>
-              请输入您的账号和密码
+              {isRegisterMode
+                ? '请创建您的账号'
+                : '请输入您的账号和密码'}
             </LoginSubtitle>
           </LoginHeader>
-          
-          <StyledForm onSubmit={handleLogin}>
+
+          <StyledForm onSubmit={handleSubmit}>
             <Form.Input
               field="username"
               placeholder="请输入账号"
@@ -277,20 +337,34 @@ const LoginPage: React.FC = () => {
                 { min: 6, message: '密码至少6个字符' }
               ]}
             />
-            
+
             <LoginButton
               type="primary"
               htmlType="submit"
               loading={loading}
             >
-              立即登录
+              {isRegisterMode ? '立即注册' : '立即登录'}
             </LoginButton>
           </StyledForm>
-          
+
           <Divider>
             <span>或</span>
           </Divider>
-          
+
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+
+            <Button
+              theme="borderless"
+              type="primary"
+              onClick={() => setIsRegisterMode(!isRegisterMode)}
+            >
+              {isRegisterMode
+                ? '已有账号？立即登录'
+                : '没有账号？立即注册'}
+            </Button>
+
+          </div>
+
           <QuickLoginButton
             onClick={handleTestLogin}
             loading={loading}
